@@ -76,7 +76,56 @@ class SARSALearner(TemporalDifferenceLearningAgent):
             TD_target += self.gamma*Q_next
         TD_error = TD_target - Q_old
         self.Q(state)[action] += self.alpha*TD_error
+
+"""
+ Autonomous agent using on-policy SARSA lambda.
+"""
+class SARSALambdaLearner(TemporalDifferenceLearningAgent):
+    def __init__(self, params):
+        super().__init__(params)
+        self.lambda_ = params['lambda']
+        self.E = {}  # Use a dictionary for eligibility traces, similar to Q-values
         
+    def update_eligibility_traces(self, state, action):
+        state_key = np.array2string(state)
+        if state_key not in self.E:
+            self.E[state_key] = np.zeros(self.nr_actions)
+        self.E[state_key][action] += 1  # Increment eligibility for the current state-action pair
+    
+    def decay_eligibility_traces(self):
+        # Decay eligibility traces for all states
+        for state_key in self.E:
+            self.E[state_key] *= self.gamma * self.lambda_
+
+    
+    def update(self, state, action, reward, next_state, terminated, truncated):
+        self.decay_exploration()
+        Q_old = self.Q(state)[action]
+
+        # Update eligibility trace for the current state-action pair
+        self.update_eligibility_traces(state, action)
+        
+        TD_target = reward
+        if not terminated:
+            next_action = self.policy(next_state)
+            Q_next = self.Q(next_state)[next_action]
+            TD_target += self.gamma * Q_next
+        
+        TD_error = TD_target - Q_old
+        
+        # Update Q-values for all states based on their eligibility traces
+        for state_key in self.E:
+            for action_index in range(self.nr_actions):  # Use range for action indices
+                self.Q_values[state_key][action_index] += self.alpha * TD_error * self.E[state_key][action_index]
+        
+        # Decay eligibility traces for all states
+        self.decay_eligibility_traces()
+                    
+        if terminated:
+            # Reset eligibility traces after each episode
+            self.E = {}
+
+
 """
  Autonomous agent using off-policy Q-Learning.
 """
