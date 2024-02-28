@@ -27,8 +27,9 @@ params = {}
 rooms_instance = sys.argv[1]
 env = rooms.load_env(f"layouts/{rooms_instance}.txt", f"{rooms_instance}.mp4")
 params["nr_actions"] = env.action_space.n
+print("Number of actions:", params["nr_actions"])
 params["gamma"] = 0.99
-params["epsilon_decay"] = 0.0001
+params["epsilon_decay"] = 0.001
 params["alpha"] = 0.1
 params["env"] = env
 params['lambda'] = 0.5
@@ -38,6 +39,8 @@ params['lambda'] = 0.5
 # agent = a.TemporalDifferenceLearningAgent(params)
 # agent = a.QLearner(params)
 agent = a.SARSALambdaLearner(params)
+# agent = a.SARSALambda_Boltzmann_learner(params)
+# agent = a.SARSALambda_UCB_learner(params)
 training_episodes = 200
 returns = [episode(env, agent, i) for i in range(training_episodes)]
 

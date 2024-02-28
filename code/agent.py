@@ -47,7 +47,7 @@ class TemporalDifferenceLearningAgent(Agent):
         self.alpha = params["alpha"]
         self.epsilon_decay = params["epsilon_decay"]
         self.epsilon = 1.0
-        
+        self.action_counts = np.zeros(self.nr_actions)
     def Q(self, state):
         state = np.array2string(state)
         if state not in self.Q_values:
@@ -62,7 +62,7 @@ class TemporalDifferenceLearningAgent(Agent):
         self.epsilon = max(self.epsilon-self.epsilon_decay, self.epsilon_decay)
 
 """
- Autonomous agent using on-policy SARSA.
+ Autonomous agent using on-policy SARSA with epsillon decay.
 """
 class SARSALearner(TemporalDifferenceLearningAgent):
         
@@ -125,6 +125,24 @@ class SARSALambdaLearner(TemporalDifferenceLearningAgent):
             # Reset eligibility traces after each episode
             self.E = {}
 
+
+"""
+ Autonomous agent using on-policy SARSA with UCB exploration.
+"""
+class SARSALambda_UCB_learner(SARSALambdaLearner):
+    def policy(self, state):
+        Q_values = self.Q(state)
+        action = UCB1(Q_values, self.action_counts, exploration_constant=1)
+        self.action_counts[action] += 1
+        return action
+
+"""
+    Autonomous agent using on-policy SARSA with Boltzmann exploration.
+"""
+class SARSALambda_Boltzmann_learner(SARSALambdaLearner):
+    def policy(self, state):
+        Q_values = self.Q(state)
+        return boltzmann(Q_values, None, temperature=1.0)
 
 """
  Autonomous agent using off-policy Q-Learning.

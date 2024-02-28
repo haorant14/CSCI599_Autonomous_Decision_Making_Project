@@ -27,3 +27,6 @@ def UCB1(Q_values, action_counts, exploration_constant=1):
             UCB1_values.append(Q + exploration_term)
     return np.argmax(UCB1_values)
 
+# thompson sampling with bernooli prior https://sudeepraja.github.io/Bandits/, beta distribution 
+# def thompson(Q_values, action_counts):
+
