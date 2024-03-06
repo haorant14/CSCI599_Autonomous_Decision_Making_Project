@@ -48,7 +48,8 @@ class RoomsEnv(gym.Env):
         self.undiscounted_return = 0
         self.state_history = []
         self.reset()
-        
+    def reward(self, state):
+        return 1 if state == self.goal_position else 0
     def state(self):
         state = numpy.zeros((NR_CHANNELS,self.width,self.height))
         x_agent,y_agent = self.agent_position

@@ -60,6 +60,28 @@ class TemporalDifferenceLearningAgent(Agent):
     
     def decay_exploration(self):
         self.epsilon = max(self.epsilon-self.epsilon_decay, self.epsilon_decay)
+"""
+on-policy monte carlo agent
+"""
+class MonteCarloAgent(TemporalDifferenceLearningAgent):
+    def __init__(self, params):
+        super().__init__(params)
+        self.discount_factor = 0.99
+        self.action_counts = np.zeros(self.nr_actions)
+        self.return_values = {}
+    
+    def update(self, state, action, g, next_state, terminated, truncated):
+        # append discounted return to Returns(s,a)
+        # update Q(s,a) = average(Returns(s,a))
+        self.decay_exploration()
+        state_key = np.array2string(state)
+        if state_key not in self.return_values:
+            self.return_values[state_key] = {action:[] for action in range(self.nr_actions)}
+        self.return_values[state_key][action].append(g)
+        # print("return values: ", self.return_values[state_key][action])
+        # print(np.mean(self.return_values[state_key][action]))
+        self.Q(state)[action] = np.mean(self.return_values[state_key][action])
+        self.action_counts[action] += 1
 
 """
  Autonomous agent using on-policy SARSA with epsillon decay.
@@ -76,7 +98,6 @@ class SARSALearner(TemporalDifferenceLearningAgent):
             TD_target += self.gamma*Q_next
         TD_error = TD_target - Q_old
         self.Q(state)[action] += self.alpha*TD_error
-
 """
  Autonomous agent using on-policy SARSA lambda.
 """
@@ -91,7 +112,6 @@ class SARSALambdaLearner(TemporalDifferenceLearningAgent):
         if state_key not in self.E:
             self.E[state_key] = np.zeros(self.nr_actions)
         self.E[state_key][action] += 1  # Increment eligibility for the current state-action pair
-    
     def decay_eligibility_traces(self):
         # Decay eligibility traces for all states
         for state_key in self.E:
@@ -126,13 +146,13 @@ class SARSALambdaLearner(TemporalDifferenceLearningAgent):
             self.E = {}
 
 
-"""
- Autonomous agent using on-policy SARSA with UCB exploration.
-"""
+    """
+    Autonomous agent using on-policy SARSA with UCB exploration.
+    """
 class SARSALambda_UCB_learner(SARSALambdaLearner):
     def policy(self, state):
         Q_values = self.Q(state)
-        action = UCB1(Q_values, self.action_counts, exploration_constant=1)
+        action = UCB1(Q_values, self.action_counts, exploration_constant=1.2)
         self.action_counts[action] += 1
         return action
 
@@ -142,7 +162,7 @@ class SARSALambda_UCB_learner(SARSALambdaLearner):
 class SARSALambda_Boltzmann_learner(SARSALambdaLearner):
     def policy(self, state):
         Q_values = self.Q(state)
-        return boltzmann(Q_values, None, temperature=1.0)
+        return boltzmann(Q_values, None, temperature=0.5)
 
 """
  Autonomous agent using off-policy Q-Learning.
