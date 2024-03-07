@@ -69,20 +69,41 @@ class MonteCarloAgent(TemporalDifferenceLearningAgent):
         self.discount_factor = 0.99
         self.action_counts = np.zeros(self.nr_actions)
         self.return_values = {}
-    
-    def update(self, state, action, g, next_state, terminated, truncated):
+        self.g = 0
+    def update(self, state, action, reward, next_state, terminated, truncated):
         # append discounted return to Returns(s,a)
         # update Q(s,a) = average(Returns(s,a))
         self.decay_exploration()
+        self.g = self.discount_factor * self.g + reward
+
         state_key = np.array2string(state)
         if state_key not in self.return_values:
             self.return_values[state_key] = {action:[] for action in range(self.nr_actions)}
-        self.return_values[state_key][action].append(g)
+        self.return_values[state_key][action].append(self.g)
         # print("return values: ", self.return_values[state_key][action])
         # print(np.mean(self.return_values[state_key][action]))
         self.Q(state)[action] = np.mean(self.return_values[state_key][action])
         self.action_counts[action] += 1
 
+class OffpolicyMonteCarloAgent(MonteCarloAgent):
+    def init(self, params):
+        super().__init__(params)
+        self.behavior_policy = self.behavior_policy
+        self.w = 1
+        self.g = 0
+    def behavior_policy(self, state):
+        return epsilon_greedy(self.Q(state), self.action_counts, epsilon=self.epsilon)
+    def C(self,state):
+        state_key = np.array2string(state)
+        if state_key not in self.C_values:
+            self.C_values[state_key] = np.zeros(self.nr_actions)
+        return self.C_values[state_key]
+    def update(self, state, action, g, next_state, terminated, truncated, w):
+        self.decay_exploration()
+        state_key = np.array2string(state)
+        self.C(state)[action] += w
+        self.Q(state)[action] += (w/self.C(state)[action])*(g-self.Q(state)[action])
+        self.action_counts[action] += 1
 """
  Autonomous agent using on-policy SARSA with epsillon decay.
 """
