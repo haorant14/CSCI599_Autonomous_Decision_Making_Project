@@ -86,24 +86,32 @@ class MonteCarloAgent(TemporalDifferenceLearningAgent):
         self.action_counts[action] += 1
 
 class OffpolicyMonteCarloAgent(MonteCarloAgent):
-    def init(self, params):
+    def __init__(self, params):
         super().__init__(params)
         self.behavior_policy = self.behavior_policy
         self.w = 1
         self.g = 0
+        self.C_values = {}
+        self.epsilon = 0.1
     def behavior_policy(self, state):
-        return epsilon_greedy(self.Q(state), self.action_counts, epsilon=self.epsilon)
+        #epsilon greedy policy
+        return epsilon_greedy(self.Q(state), self.action_counts,epsilon=self.epsilon)
+        #random policy
+        #return random_bandit(self.Q(state), self.action_counts)
     def C(self,state):
         state_key = np.array2string(state)
         if state_key not in self.C_values:
             self.C_values[state_key] = np.zeros(self.nr_actions)
         return self.C_values[state_key]
-    def update(self, state, action, g, next_state, terminated, truncated, w):
-        self.decay_exploration()
-        state_key = np.array2string(state)
-        self.C(state)[action] += w
-        self.Q(state)[action] += (w/self.C(state)[action])*(g-self.Q(state)[action])
+    def update(self, state, action, reward, next_state, terminated, truncated):
+        self.g = self.discount_factor * self.g + reward
+        self.C(state)[action] += self.w
+        self.Q(state)[action] += (self.w/self.C(state)[action])*(self.g-self.Q(state)[action])
         self.action_counts[action] += 1
+    def policy(self, state):
+        #greedy policy
+        return epsilon_greedy(self.Q(state), self.action_counts, epsilon=0.0)
+    
 """
  Autonomous agent using on-policy SARSA with epsillon decay.
 """
