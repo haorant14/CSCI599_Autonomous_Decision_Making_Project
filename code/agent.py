@@ -207,3 +207,146 @@ class QLearner(TemporalDifferenceLearningAgent):
             TD_target += self.gamma*Q_next
         TD_error = TD_target - Q_old
         self.Q(state)[action] += self.alpha*TD_error
+
+"""
+    Autonomous agent using Dyna-Q.
+"""
+
+class DynaQLearner(TemporalDifferenceLearningAgent):
+    def __init__(self, params):
+        super().__init__(params)
+        self.model = {}  # Dictionary to store the transition model
+        self.planning_steps = params["planning_steps"]
+
+    def update_model(self, state, action, reward, next_state, terminated, truncated):
+        state_key = np.array2string(state)
+        next_state_key = np.array2string(next_state)
+        if state_key not in self.model:
+            self.model[state_key] = {}
+        if action not in self.model[state_key]:
+            self.model[state_key][action] = []
+        self.model[state_key][action].append((reward, next_state_key, terminated, truncated))
+
+    def planning_step(self):
+        # Sample a state and action from the model
+        state_key = random.choice(list(self.model.keys()))
+        state = np.fromstring(state_key, sep='\n')
+        action = random.choice(list(self.model[state_key].keys()))
+
+        # Sample a transition from the model
+        reward, next_state_key, terminated, truncated = random.choice(self.model[state_key][action])
+        next_state = np.fromstring(next_state_key, sep='\n')
+
+        # Update Q-values based on the sampled transition
+        Q_old = self.Q(state)[action]
+        TD_target = reward
+        if not terminated:
+            Q_next = max(self.Q(next_state))
+            TD_target += self.gamma * Q_next
+        TD_error = TD_target - Q_old
+        self.Q(state)[action] += self.alpha * TD_error
+
+    def update(self, state, action, reward, next_state, terminated, truncated):
+        self.decay_exploration()
+        self.update_model(state, action, reward, next_state, terminated, truncated)
+
+        # Perform Q-learning update
+        Q_old = self.Q(state)[action]
+        TD_target = reward
+        if not terminated:
+            Q_next = max(self.Q(next_state))
+            TD_target += self.gamma * Q_next
+        TD_error = TD_target - Q_old
+        self.Q(state)[action] += self.alpha * TD_error
+
+        # Perform planning steps
+        for _ in range(self.planning_steps):
+            self.planning_step()
+
+class DynaQLearnerWithEligibilityTraces(TemporalDifferenceLearningAgent):
+    def __init__(self, params):
+        super().__init__(params)
+        self.model = {}  # Dictionary to store the transition model
+        self.planning_steps = params["planning_steps"]
+        self.lambda_ = params['lambda']
+        self.E = {}  # Use a dictionary for eligibility traces, similar to Q-values
+
+    def update_model(self, state, action, reward, next_state, terminated, truncated):
+        state_key = np.array2string(state)
+        next_state_key = np.array2string(next_state)
+        if state_key not in self.model:
+            self.model[state_key] = {}
+        if action not in self.model[state_key]:
+            self.model[state_key][action] = []
+        self.model[state_key][action].append((reward, next_state_key, terminated, truncated))
+
+    def update_eligibility_traces(self, state, action):
+        state_key = np.array2string(state)
+        if state_key not in self.E:
+            self.E[state_key] = np.zeros(self.nr_actions)
+        self.E[state_key][action] += 1  # Increment eligibility for the current state-action pair
+
+    def decay_eligibility_traces(self):
+        # Decay eligibility traces for all states
+        for state_key in self.E:
+            self.E[state_key] *= self.gamma * self.lambda_
+
+    def planning_step(self):
+        # Sample a state and action from the model
+        state_key = random.choice(list(self.model.keys()))
+        state = np.fromstring(state_key, sep='\n')
+        action = random.choice(list(self.model[state_key].keys()))
+
+        # Sample a transition from the model
+        reward, next_state_key, terminated, truncated = random.choice(self.model[state_key][action])
+        next_state = np.fromstring(next_state_key, sep='\n')
+
+        # Update eligibility trace for the current state-action pair
+        self.update_eligibility_traces(state, action)
+
+        Q_old = self.Q(state)[action]
+        TD_target = reward
+        if not terminated:
+            Q_next = max(self.Q(next_state))
+            TD_target += self.gamma * Q_next
+
+        TD_error = TD_target - Q_old
+
+        # Update Q-values for all states based on their eligibility traces
+        for state_key in self.E:
+            for action_index in range(self.nr_actions):  # Use range for action indices
+                self.Q_values[state_key][action_index] += self.alpha * TD_error * self.E[state_key][action_index]
+
+        # Decay eligibility traces for all states
+        self.decay_eligibility_traces()
+
+    def update(self, state, action, reward, next_state, terminated, truncated):
+        self.decay_exploration()
+        self.update_model(state, action, reward, next_state, terminated, truncated)
+
+        # Update eligibility trace for the current state-action pair
+        self.update_eligibility_traces(state, action)
+
+        Q_old = self.Q(state)[action]
+        TD_target = reward
+        if not terminated:
+            Q_next = max(self.Q(next_state))
+            TD_target += self.gamma * Q_next
+
+        TD_error = TD_target - Q_old
+
+        # Update Q-values for all states based on their eligibility traces
+        for state_key in self.E:
+            for action_index in range(self.nr_actions):  # Use range for action indices
+                self.Q_values[state_key][action_index] += self.alpha * TD_error * self.E[state_key][action_index]
+
+        # Decay eligibility traces for all states
+        self.decay_eligibility_traces()
+
+        # Perform planning steps
+        for _ in range(self.planning_steps):
+            self.planning_step()
+
+        if terminated:
+            # Reset eligibility traces after each episode
+            self.E = {}
