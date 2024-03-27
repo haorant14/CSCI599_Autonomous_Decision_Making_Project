@@ -48,6 +48,7 @@ class TemporalDifferenceLearningAgent(Agent):
         self.epsilon_decay = params["epsilon_decay"]
         self.epsilon = 1.0
         self.action_counts = np.zeros(self.nr_actions)
+        self.name = "Temporal Difference Learning"
     def Q(self, state):
         state = np.array2string(state)
         if state not in self.Q_values:
@@ -70,6 +71,7 @@ class MonteCarloAgent(TemporalDifferenceLearningAgent):
         self.action_counts = np.zeros(self.nr_actions)
         self.return_values = {}
         self.g = 0
+        self.name = "Monte Carlo"
     def update(self, state, action, reward, next_state, terminated, truncated):
         # append discounted return to Returns(s,a)
         # update Q(s,a) = average(Returns(s,a))
@@ -93,6 +95,7 @@ class OffpolicyMonteCarloAgent(MonteCarloAgent):
         self.g = 0
         self.C_values = {}
         self.epsilon = 0.1
+        self.name = "Off-policy Monte Carlo"
     def behavior_policy(self, state):
         #epsilon greedy policy
         return epsilon_greedy(self.Q(state), self.action_counts,epsilon=self.epsilon)
@@ -135,7 +138,7 @@ class SARSALambdaLearner(TemporalDifferenceLearningAgent):
         super().__init__(params)
         self.lambda_ = params['lambda']
         self.E = {}  # Use a dictionary for eligibility traces, similar to Q-values
-        
+        self.name = "SARSA(lambda)"
     def update_eligibility_traces(self, state, action):
         state_key = np.array2string(state)
         if state_key not in self.E:
@@ -189,6 +192,7 @@ class SARSALambda_UCB_learner(SARSALambdaLearner):
     Autonomous agent using on-policy SARSA with Boltzmann exploration.
 """
 class SARSALambda_Boltzmann_learner(SARSALambdaLearner):
+
     def policy(self, state):
         Q_values = self.Q(state)
         return boltzmann(Q_values, None, temperature=0.5)
@@ -197,7 +201,9 @@ class SARSALambda_Boltzmann_learner(SARSALambdaLearner):
  Autonomous agent using off-policy Q-Learning.
 """
 class QLearner(TemporalDifferenceLearningAgent):
-        
+    def __init__(self, params):
+        super().__init__(params)
+        self.name = "Q-Learning"
     def update(self, state, action, reward, next_state, terminated, truncated):
         self.decay_exploration()
         Q_old = self.Q(state)[action]
@@ -217,7 +223,7 @@ class DynaQLearner(TemporalDifferenceLearningAgent):
         super().__init__(params)
         self.model = {}  # Dictionary to store the transition model
         self.planning_steps = params["planning_steps"]
-
+        self.name = "Dyna-Q"
     def update_model(self, state, action, reward, next_state, terminated, truncated):
         state_key = np.array2string(state)
         next_state_key = np.array2string(next_state)

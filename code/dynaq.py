@@ -82,11 +82,11 @@ def off_policy_monte_carlo_episode(env, agent, nr_episode=0):
     print(nr_episode, ":", agent.g)
     return agent.g
 
-def store_qtable(qtable, rooms_instance):     
+def store_qtable(qtable, params):     
     # Its important to use binary mode
     # store at qtable folder
 
-    dbfile = open(f"qtable/{rooms_instance}.pkl", 'ab')     
+    dbfile = open(f"qtable/{agent.name}_{sys.argv[1]}.pkl", 'ab')     
     # source, destination
     pickle.dump(qtable, dbfile)                    
     dbfile.close()
@@ -107,13 +107,14 @@ params['planning_steps'] = 50
 # agent = a.TemporalDifferenceLearningAgent(params)
 # agent = a.QLearner(params)
 agent = a.DynaQLearner(params)
+
 # agent = a.OffpolicyMonteCarloAgent(params)
 training_episodes = 500
 returns = [episode(env, agent, i) for i in range(training_episodes)]
 x = range(training_episodes)
 plot.plot(x, returns, label="Dyna Q")
 
-plot.title("Discounted Return over Episodes")
+plot.title(f"Discounted Return for agent {agent.name} on {sys.argv[1]}")
 plot.xlabel("Episode")
 plot.ylabel("Discounted Return")
 plot.legend()
@@ -123,4 +124,4 @@ env.save_video()
 
 ## log the state action value function table and optimal action for each state
 epsilon_decay = params["epsilon_decay"]
-store_qtable(agent.Q_values, rooms_instance)
+store_qtable(agent.Q_values, params)

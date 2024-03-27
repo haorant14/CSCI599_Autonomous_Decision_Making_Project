@@ -7,16 +7,14 @@ import sys
 import agent as a
 import matplotlib.pyplot as plot
 import rooms
-def loadData(rooms_instance):
+def loadData(agent, rooms_instance):
     # for reading also binary mode is important
-    file = open(f"qtable/{rooms_instance}.pkl", 'rb')
+    file = open(f"qtable/{agent.name}_{rooms_instance}.pkl", 'rb')
     q_table = pickle.load(file)
     for keys in q_table:
         print(keys, '=>', q_table[keys])
     file.close()
 
-rooms_instance = sys.argv[1]
-q_table = loadData(rooms_instance)
 
 # start the agent with the learned q table
 def episode(env, agent, nr_episode=0):
@@ -52,12 +50,14 @@ params['planning_steps'] = 50
 # agent = a.TemporalDifferenceLearningAgent(params)
 # agent = a.QLearner(params)
 agent = a.DynaQLearner(params)
+rooms_instance = sys.argv[1]
+q_table = loadData(agent, rooms_instance)
 agent.q_table = q_table
 # agent = a.OffpolicyMonteCarloAgent(params)
 testing_episodes = 10
 returns = [episode(env, agent, i) for i in range(testing_episodes)]
 x = range(testing_episodes)
-plot.plot(x, returns, label="Dyna Q")
+plot.plot(x, returns, label="tested curve")
 
 plot.title("Discounted Return over Episodes")
 plot.xlabel("Episode")
