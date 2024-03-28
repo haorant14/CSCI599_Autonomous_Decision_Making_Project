@@ -34,7 +34,24 @@ class RandomAgent(Agent):
         
     def policy(self, state):
         return random.choice(range(self.nr_actions))
+"""
+greedy acting agent
+"""
+class GreedyEvaluateAgent(Agent):
+    def __init__(self, params):
+        super(GreedyEvaluateAgent, self).__init__(params)
+        self.name = "Greedy"
+        self.Q_values = {}
+    def Q(self, state):
+        state = np.array2string(state)
+        if state not in self.Q_values:
+            self.Q_values[state] = np.zeros(self.nr_actions)
+        return self.Q_values[state]
 
+    def policy(self, state):
+        Q_values = self.Q(state)
+        return np.argmax(Q_values)
+    
 """
  Autonomous agent base for learning Q-values.
 """
@@ -71,7 +88,7 @@ class MonteCarloAgent(TemporalDifferenceLearningAgent):
         self.action_counts = np.zeros(self.nr_actions)
         self.return_values = {}
         self.g = 0
-        self.name = "Monte Carlo"
+        self.name = "MonteCarlo"
     def update(self, state, action, reward, next_state, terminated, truncated):
         # append discounted return to Returns(s,a)
         # update Q(s,a) = average(Returns(s,a))
@@ -119,7 +136,9 @@ class OffpolicyMonteCarloAgent(MonteCarloAgent):
  Autonomous agent using on-policy SARSA with epsillon decay.
 """
 class SARSALearner(TemporalDifferenceLearningAgent):
-        
+    def __init__(self, params):
+        super().__init__(params)
+        self.name = "SARSA"
     def update(self, state, action, reward, next_state, terminated, truncated):
         self.decay_exploration()
         Q_old = self.Q(state)[action]
@@ -138,7 +157,7 @@ class SARSALambdaLearner(TemporalDifferenceLearningAgent):
         super().__init__(params)
         self.lambda_ = params['lambda']
         self.E = {}  # Use a dictionary for eligibility traces, similar to Q-values
-        self.name = "SARSA(lambda)"
+        self.name = "SARSAlambda"
     def update_eligibility_traces(self, state, action):
         state_key = np.array2string(state)
         if state_key not in self.E:

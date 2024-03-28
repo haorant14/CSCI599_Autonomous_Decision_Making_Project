@@ -84,7 +84,7 @@ params = {}
 rooms_instance = sys.argv[1]
 env = rooms.load_env(f"layouts/{rooms_instance}.txt", f"{rooms_instance}.mp4")
 params["nr_actions"] = env.action_space.n
-params["nr_states"] = env.observation_space.n
+# params["nr_states"] = env.observation_space.n
 print("Number of actions:", params["nr_actions"])
 params["gamma"] = 0.99
 params["epsilon_decay"] = 0.0001
