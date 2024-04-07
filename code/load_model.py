@@ -42,7 +42,7 @@ rooms_instance = sys.argv[1]
 agentmame = sys.argv[2]
 env = rooms.load_env(f"layouts/{rooms_instance}.txt", f"{rooms_instance}.mp4")
 params["nr_actions"] = env.action_space.n
-params["gamma"] = 0.99
+params["gamma"] = 0.997
 params["epsilon_decay"] = 0.001
 params["alpha"] = 0.1
 params["env"] = env
@@ -57,14 +57,16 @@ rooms_instance = sys.argv[1]
 q_table = loadData(agentmame, rooms_instance)
 agent.Q_values = q_table
 # agent = a.OffpolicyMonteCarloAgent(params)
-testing_episodes = 10
+testing_episodes = 100
 returns = [episode(env, agent, i) for i in range(testing_episodes)]
 x = range(testing_episodes)
-plot.plot(x, returns, label="tested curve")
+plot.plot(x, returns, label="after training")
 
-plot.title("Discounted Return over Episodes")
+plot.title("greedy agent discounted Return over Episodes after Dyna-Q training")
 plot.xlabel("Episode")
 plot.ylabel("Discounted Return")
 plot.legend()
 plot.show()
 env.save_video()
+
+

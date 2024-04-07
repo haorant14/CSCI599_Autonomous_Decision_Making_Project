@@ -52,6 +52,35 @@ def monte_carlo_episode(env, agent, nr_episode=0):
     # 3. Integrate new experience into agent
     print(nr_episode, ":", agent.g)
     return agent.g
+def off_policy_monte_carlo_episode(env, agent, nr_episode=0):
+    state = env.reset()
+    done = False
+    time_step = 0
+    #generate episode
+    episode = []
+    while not done:
+        # 1. Select action according to policy
+        action = agent.behavior_policy(state)
+        
+        # 2. Execute selected action
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        episode.append((state, action, reward))
+        state = next_state
+        done = terminated or truncated
+        time_step += 1
+    #update value function
+    t = time_step - 1
+    agent.g = 0
+    agent.w = 1 
+    for t in range(time_step-1, -1, -1):
+        state, action, reward = episode[t]
+        agent.update(state, action, reward, next_state, terminated, truncated)
+        if agent.policy(state) != agent.behavior_policy(state):
+            break
+        agent.w *= 1/0.25
+    # 3. Integrate new experience into agent
+    print(nr_episode, ":", agent.g)
+    return agent.g
 
 def store_qtable(qtable, params):     
     # Its important to use binary mode
@@ -59,8 +88,8 @@ def store_qtable(qtable, params):
 
     dbfile = open(f"qtable/{agent.name}_{sys.argv[1]}.pkl", 'wb')     
     # source, destination
-    for keys in qtable:
-        print(keys, '=>', qtable[keys])
+    # for keys in qtable:
+    #     print(keys, '=>', qtable[keys])
 
     pickle.dump(qtable, dbfile)                    
     dbfile.close()
@@ -83,9 +112,9 @@ params['planning_steps'] = 50
 agent = a.SARSALambdaLearner(params)
 
 
-# agent = a.OffpolicyMonteCarloAgent(params)
-training_episodes = 500
+training_episodes = 2000
 returns = [episode(env, agent, i) for i in range(training_episodes)]
+# returns = [off_policy_monte_carlo_episode(env, agent, i) for i in range(training_episodes)]
 store_qtable(agent.Q_values, params)
 x = range(training_episodes)
 plot.plot(x, returns, label=agent.name)

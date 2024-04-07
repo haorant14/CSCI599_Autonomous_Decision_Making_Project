@@ -88,7 +88,7 @@ class MonteCarloAgent(TemporalDifferenceLearningAgent):
         self.action_counts = np.zeros(self.nr_actions)
         self.return_values = {}
         self.g = 0
-        self.name = "MonteCarlo"
+        self.name = "onpolicy_MonteCarlo"
     def update(self, state, action, reward, next_state, terminated, truncated):
         # append discounted return to Returns(s,a)
         # update Q(s,a) = average(Returns(s,a))
@@ -112,7 +112,7 @@ class OffpolicyMonteCarloAgent(MonteCarloAgent):
         self.g = 0
         self.C_values = {}
         self.epsilon = 0.1
-        self.name = "Off-policy Monte Carlo"
+        self.name = "Offpolicy_MonteCarlo"
     def behavior_policy(self, state):
         #epsilon greedy policy
         return epsilon_greedy(self.Q(state), self.action_counts,epsilon=self.epsilon)
