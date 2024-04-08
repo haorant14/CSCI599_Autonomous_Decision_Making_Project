@@ -72,10 +72,15 @@ To achieve the best performance, we used the following hyper-parameters:
  - number of planning steps(for Dyna-Q) = 50
 
 ## Result 
-Below shows the average discounted return for algorithm we used on different level maps
+Below shows the average discounted return over 100 episodes on different level maps for the algorithm we used
 
-| Model name         | Easy_1 | Medium_1  | Hard_1|
+| Model name         | Easy | Medium  | Hard|
 | ------------------ |---------------- | -------------- |----------|
-| Dyna-Q with Epsilon greedy   |     0.9826         |    0.9779        |     0.9501 |
+| Dyna-Q with Decaying Epsilon greedy   |     0.9826         |    0.9779        |     0.9501 |
+| SARSA($\lambda$) with Decaying Epsilon greedy | 0.9960  | 0.9788  | 0.8373 |
+| SARSA with Decaying Epsilon Greedy|0.9957 | 0.9703|0.9520 |
+| Q-learning with Decaying Epsilon Greedy|0.9845 | 0.9798 | 0.9523| 
+| On-Policy Monte-Carlo Learning |0.27 | 0.6301| N/A |
+| Off-Policy Monte-Carlo Learning | | 0.3667|N/A | 
 
 
