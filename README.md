@@ -26,7 +26,7 @@ All available maps are provided in the folder `code/layouts` and listed in the t
 | `hard_1`      | `code/layouts/hard_1.txt` |
 
 
-## Usage
+## Training
 
 Run agent using the following commands in a terminal (`map-name` is provided in the "Map"-column of the table above):
 ```
@@ -34,7 +34,8 @@ cd code
 python train.py <map-name>
 ```
 
-After training, training result(Q table) will be stored in code/qtable as a pickle file. There are some trained model already for convinience. 
+
+## Evaluation
 
 Run a greedy agent using existing Q table using following commands in terminal to validate training result over 100 episode. 
 ```
@@ -44,7 +45,9 @@ Here is an example:
 ```
 python .\load_model.py hard_1 Dyna-Q
 ```
+## Pre-trained Models
 
+After training, training result(Q table) will be stored in `code/qtable` as a pickle file. you can use these for evaluation without a long time of training. 
 
 ## Code Structure Overview
  `code/`contains:
@@ -66,4 +69,13 @@ To achieve the best performance, we used the following hyper-parameters:
  - learning rate $\alpha$ = 0.1 
  - discount $\gamma$  = 0.99
  - eligibility trace decay factor $\lambda$ (for SARSA($\lambda$))= 0.75 
- - number of planning steps(for Dyna-Q) = 50 
+ - number of planning steps(for Dyna-Q) = 50
+
+## Result 
+Below shows the average discounted return for algorithm we used on different level maps
+
+| Model name         | Easy_1 | Medium_1  | Hard_1|
+| ------------------ |---------------- | -------------- |----------|
+| Dyna-Q with Epsilon greedy   |     0.9826         |    0.9779        |     0.9501 |
+
+
