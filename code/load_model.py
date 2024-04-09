@@ -7,6 +7,9 @@ import sys
 import agent as a
 import matplotlib.pyplot as plot
 import rooms
+"""
+    load q table model from folder qtable and start the agent with the learned q table
+"""
 def loadData(agentmame, rooms_instance):
     # for reading also binary mode is important
     file = open(f"qtable/{agentmame}_{rooms_instance}.pkl", 'rb')
@@ -17,8 +20,9 @@ def loadData(agentmame, rooms_instance):
     file.close()
     return q_table
 
-
-# start the agent with the learned q table
+"""
+    Run an episode with the greedy agent
+"""
 def episode(env, agent, nr_episode=0):
     state = env.reset()
     discounted_return = 0
@@ -58,15 +62,20 @@ q_table = loadData(agentmame, rooms_instance)
 agent.Q_values = q_table
 # agent = a.OffpolicyMonteCarloAgent(params)
 testing_episodes = 100
+
 returns = [episode(env, agent, i) for i in range(testing_episodes)]
+"""
+    Plot the discounted return over episodes after testing a greedy agent
+"""
 x = range(testing_episodes)
 plot.plot(x, returns, label="after training")
 
-plot.title("greedy agent discounted Return over Episodes after Dyna-Q training")
+plot.title("greedy agent discounted Return over Episodes after training")
 plot.xlabel("Episode")
 plot.ylabel("Discounted Return")
 plot.legend()
 plot.show()
 env.save_video()
+print("Average discounted return after training: ", np.mean(returns))
 
 

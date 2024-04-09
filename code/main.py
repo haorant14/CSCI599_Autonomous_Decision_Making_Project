@@ -87,7 +87,7 @@ params["nr_actions"] = env.action_space.n
 # params["nr_states"] = env.observation_space.n
 print("Number of actions:", params["nr_actions"])
 params["gamma"] = 0.99
-params["epsilon_decay"] = 0.0001
+params["epsilon_decay"] = 0.00001
 params["alpha"] = 0.1
 params["env"] = env
 params['lambda'] = 0.5
@@ -95,29 +95,48 @@ params['lambda'] = 0.5
 # agent = a.SARSALearner(params)
 # agent = a.TemporalDifferenceLearningAgent(params)
 # agent = a.QLearner(params)
-SARSAAgent = a.SARSALearner(params)
-SARSAlambdaAgent = a.SARSALambdaLearner(params)
-MCAgent = a.MonteCarloAgent(params)
+# SARSAAgent = a.SARSALearner(params)
+params2 = params.copy()
+params2['lambda'] = 0.75
+param3 = params.copy()
+param3['lambda'] = 0.25
+SARSAlambdaAgent05 = a.SARSALambdaLearner(params)
+SARSAlambdaAgent075 = a.SARSALambdaLearner(params2)
+SARSAlambdaAgent025 = a.SARSALambdaLearner(param3)
+# MCAgent = a.MonteCarloAgent(params)
 
 # agent = a.OffpolicyMonteCarloAgent(params)
-training_episodes = 500
-MCreturns = [monte_carlo_episode(env, MCAgent, i) for i in range(training_episodes)]
-SARSAAgentreturns = [episode(env, SARSAAgent, i) for i in range(training_episodes)]
-SARSALamdaAgentreturns = [episode(env, SARSAlambdaAgent, i) for i in range(training_episodes)]
-
+training_episodes = 1000
+lambda025 = [episode(env, SARSAlambdaAgent025, i) for i in range(training_episodes)]
+lambda05 = [episode(env, SARSAlambdaAgent05, i) for i in range(training_episodes)]
+lambda075 = [episode(env, SARSAlambdaAgent075, i) for i in range(training_episodes)]
 x = range(training_episodes)
-plot.plot(x, SARSAAgentreturns, label="SARSA")
-plot.plot(x, SARSALamdaAgentreturns, label="SARSA lambda")
-plot.plot(x, MCreturns, label="Monte Carlo")
+plot.plot(x, lambda025, label="lambda 0.25")
+plot.plot(x, lambda05, label="lambda 0.5")
+plot.plot(x, lambda075, label="lambda 0.75")
 
-plot.title("Discounted Return over Episodes")
+plot.title("discounted Return on {} after Sarsa(lambda) training".format(rooms_instance))
 plot.xlabel("Episode")
 plot.ylabel("Discounted Return")
 plot.legend()
 plot.show()
 env.save_video()
+import pickle
+def store_qtable(qtable, name):     
+    # Its important to use binary mode
+    # store at qtable folder
 
+    dbfile = open(f"qtable/compare_{name}_{sys.argv[1]}.pkl", 'wb')     
+    # source, destination
+    # for keys in qtable:
+    #     print(keys, '=>', qtable[keys])
 
+    pickle.dump(qtable, dbfile)                    
+    dbfile.close()
+
+store_qtable(SARSAlambdaAgent025.Q_values, "lambda025")
+store_qtable(SARSAlambdaAgent05.Q_values, "lambda05")
+store_qtable(SARSAlambdaAgent075.Q_values, "lambda075")
 ## log the state action value function table and optimal action for each state
 # epsilon_decay = params["epsilon_decay"]
 # np.save(f"qtable/{agent}_{training_episodes}_{epsilon_decay}_{rooms_instance}.npy", agent.Q_values)

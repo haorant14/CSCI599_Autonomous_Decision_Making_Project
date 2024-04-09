@@ -4,6 +4,13 @@ import matplotlib.pyplot as plot
 import sys
 import numpy as np
 import pickle
+"""
+    This script trains an agent on a given environment.
+"""
+
+"""
+    training loop
+"""
 def episode(env, agent, nr_episode=0):
     state = env.reset()
     discounted_return = 0
@@ -25,7 +32,9 @@ def episode(env, agent, nr_episode=0):
     
     return discounted_return
 
-# every visit
+"""
+    on policy monte carlo training loop
+"""
 def monte_carlo_episode(env, agent, nr_episode=0):
     state = env.reset()
     done = False
@@ -52,6 +61,10 @@ def monte_carlo_episode(env, agent, nr_episode=0):
     # 3. Integrate new experience into agent
     print(nr_episode, ":", agent.g)
     return agent.g
+
+"""
+    Off policy monte carlo training loop
+"""
 def off_policy_monte_carlo_episode(env, agent, nr_episode=0):
     state = env.reset()
     done = False
@@ -82,6 +95,9 @@ def off_policy_monte_carlo_episode(env, agent, nr_episode=0):
     print(nr_episode, ":", agent.g)
     return agent.g
 
+"""
+    Store the Q-table in a pickle file in qtable folder as agentname_rooms_instance.pkl
+"""
 def store_qtable(qtable, params):     
     # Its important to use binary mode
     # store at qtable folder
@@ -106,16 +122,21 @@ params['lambda'] = 0.5
 params['planning_steps'] = 50
 # agent = a.RandomAgent(params)
 # agent = a.SARSALearner(params)
-# agent = a.SARSALearner(params)
 # agent = a.TemporalDifferenceLearningAgent(params)
 # agent = a.QLearner(params)
-agent = a.SARSALambdaLearner(params)
-
+# agent = a.SARSALambdaLearner(params)
+# agent = a.OffpolicyMonteCarloAgent(params)
+# agent = a.MonteCarloAgent(params)
+agent = a.DynaQLearner(params)
 
 training_episodes = 2000
 returns = [episode(env, agent, i) for i in range(training_episodes)]
-# returns = [off_policy_monte_carlo_episode(env, agent, i) for i in range(training_episodes)]
+# returns = [monte_carlo_episode(env, agent, i) for i in range(training_episodes)]
 store_qtable(agent.Q_values, params)
+
+"""
+    Plot the discounted return over the training episodes
+"""
 x = range(training_episodes)
 plot.plot(x, returns, label=agent.name)
 
@@ -125,6 +146,3 @@ plot.ylabel("Discounted Return")
 plot.legend()
 plot.show()
 env.save_video()
-
-
-## log the state action value function table and optimal action for each state
